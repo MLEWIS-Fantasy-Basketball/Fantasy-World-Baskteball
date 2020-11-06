@@ -91,11 +91,11 @@ ALTER SEQUENCE public.owner_owner_id_seq OWNED BY public.owner.owner_id;
 
 CREATE TABLE public.player (
     player_id integer NOT NULL,
-    name character(50) NOT NULL,
+    name character varying(50) NOT NULL,
     on_team boolean NOT NULL,
     "position" character(2) NOT NULL,
-    real_team_name character(10) NOT NULL,
-    real_league_name character(25) NOT NULL
+    real_team_name character varying(10) NOT NULL,
+    real_league_name character varying(50) NOT NULL
 );
 
 
