@@ -29,7 +29,7 @@ CREATE TABLE public.league (
     league_name character(50) NOT NULL,
     number_of_teams integer NOT NULL,
     commissioner_id integer NOT NULL,
-    teams_ids varying(100) NOT NULL
+    teams_ids character varying(100) NOT NULL
 );
 
 
@@ -94,8 +94,8 @@ CREATE TABLE public.player (
     name character(50) NOT NULL,
     on_team boolean NOT NULL,
     "position" character(2) NOT NULL,
-    real_team_name character(50) NOT NULL,
-    real_league_name character(50) NOT NULL
+    real_team_name character(25) NOT NULL,
+    real_league_name character(25) NOT NULL
 );
 
 
@@ -126,8 +126,8 @@ ALTER SEQUENCE public.player_player_id_seq OWNED BY public.player.player_id;
 CREATE TABLE public.stats (
     year integer NOT NULL,
     player_id integer NOT NULL,
-    real_stats varying(250),
-    fantasy_stats varying(250)
+    real_stats character varying(250),
+    fantasy_stats character varying(250)
 );
 
 
@@ -142,7 +142,7 @@ CREATE TABLE public.team (
     name character(50) NOT NULL,
     wins integer NOT NULL,
     losses integer NOT NULL,
-    player_ids varying(100)
+    player_ids character varying(100)
 );
 
 
