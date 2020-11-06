@@ -94,7 +94,7 @@ CREATE TABLE public.player (
     name character(50) NOT NULL,
     on_team boolean NOT NULL,
     "position" character(2) NOT NULL,
-    real_team_name character(25) NOT NULL,
+    real_team_name character(10) NOT NULL,
     real_league_name character(25) NOT NULL
 );
 
