@@ -61,7 +61,7 @@ CREATE TABLE public.owner (
     owner_id integer NOT NULL,
     team_id integer NOT NULL,
     username character varying(50) NOT NULL,
-    password character varying(50) NOT NULL
+    password character(128) NOT NULL
 );
 
 
