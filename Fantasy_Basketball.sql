@@ -124,6 +124,7 @@ ALTER SEQUENCE public.player_player_id_seq OWNED BY public.player.player_id;
 --
 
 CREATE TABLE public.stats (
+    year_player_key character varying(15) NOT NULL,
     year integer NOT NULL,
     player_id integer NOT NULL,
     real_stats character varying(250),
@@ -291,7 +292,7 @@ ALTER TABLE ONLY public.player
 --
 
 ALTER TABLE ONLY public.stats
-    ADD CONSTRAINT stats_pkey PRIMARY KEY (year);
+    ADD CONSTRAINT stats_pkey PRIMARY KEY (year_player_key);
 
 
 --
