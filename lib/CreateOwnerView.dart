@@ -1,12 +1,14 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mlewis_fantasy_basketball/LoginView.dart';
 import 'package:mlewis_fantasy_basketball/Utils.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
 
-final Icon tempIcon = new Icon(
+final Icon bballIcon = new Icon(
   Icons.sports_basketball,
   color: Colors.blue,
   size: 36.0,
@@ -33,24 +35,50 @@ class OwnerCreationForm extends StatefulWidget {
 
 class _OwnerCreationState extends State<OwnerCreationForm> {
 
-  List<LeagueListItem> leagues = List<LeagueListItem>.generate(1, (index) => LeagueDataItem("Matthew's League for Hoopers", 'Commissioner: Matthew Barton', tempIcon));
+  List<LeagueListItem> leagues = [];//List<LeagueListItem>.generate(1, (index) => LeagueDataItem("Matthew's League for Hoopers", 'Commissioner: Matthew Barton', tempIcon));
+  bool _gotLeagues = false;
 
   final _formKey = GlobalKey<FormState>();
+
+  int _itemCount = 0;
+  var jsonResponse;
+  String _query = "leaguelist";
+
+  Future<void> getLeagues() async {
+    String url = "http://127.0.0.1:5000/" + _query;
+    http.Response response = await http.get(url);
+    if (response.statusCode == 200 || response.statusCode == 302) {
+      setState(() {
+        jsonResponse = convert.jsonDecode(response.body);
+        //debugPrint(jsonResponse[1].toString());
+        _itemCount = jsonResponse.length;
+        for (var league in jsonResponse) {
+          leagues.add(LeagueDataItem.fromJson(league));
+        }
+      });
+      debugPrint("Number of leagues found : $_itemCount");
+    } else {
+      debugPrint("Request failed with status: ${response.statusCode}.");
+    }
+  }
 
 
   final usernameController = TextEditingController();
   final password1Controller = TextEditingController();
   final password2Controller = TextEditingController();
+  final teamNameController = TextEditingController();
+
 
   @override
   void dispose() {
     usernameController.dispose();
     password1Controller.dispose();
     password2Controller.dispose();
+    teamNameController.dispose();
     super.dispose();
   }
 
-  void createAccount(String username, String password) async {
+  void createAccount(String username, String password, String teamName) async {
     final http.Response response = await http.post(
       'http://127.0.0.1:5000/owner/create',
       headers: <String, String>{
@@ -59,6 +87,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
       body: jsonEncode(<String, String>{
         'username': username,
         'password': password,
+        'team_name': teamName,
       }));
     if (response.statusCode == 201 || response.statusCode == 200) {
       print("Account successfully created");
@@ -70,8 +99,14 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
 
   @override
   Widget build(BuildContext context) {
+    if(!_gotLeagues) {
+      getLeagues();
+      _gotLeagues = true;
+    }
     String us = "";
     String pw = "";
+    String tn = "";
+    List<int> league_ids = [];
     return Form(
         key: _formKey,
         child: Column(
@@ -129,7 +164,28 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                 pw = value;
               }
             ),
-            Text('Select what leagues you would like to join'),
+            // New Team Name Field.
+            TextFormField(
+                controller: teamNameController,
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.people),
+                  labelText: 'New Team Name',
+                  filled: true,
+                ),
+                validator: (value) {
+                  if(value.isEmpty) {
+                    return 'Please enter a team name';
+                  }
+                  return null;
+                },
+                onSaved: (String value) {
+                  tn = value;
+                }
+            ),
+            Container(
+                padding: EdgeInsets.only(top: 20, bottom: 20),
+              child: Text('Select what leagues you would like to join'),
+            ),
             // Possible Leagues to join
             Container(
               // TODO: adjust height according to size of screen
@@ -140,13 +196,14 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                     final league = leagues[index];
                     return Card(
                         child: CheckboxListTile(
-                          secondary: league.buildLogo(context),
+                          secondary: bballIcon,
                           title: league.buildName(context),
                           subtitle: league.buildData(context),
                           value: timeDilation != 1.0,
                           onChanged: (bool value) {
                             setState(() {
                               timeDilation = value ? 2.0 : 1.0;
+                              league_ids.add(league.getID());
                             });
                           },
                         )
@@ -156,7 +213,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
             ElevatedButton(onPressed: () {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
-                createAccount(us, pw);
+                createAccount(us, pw, tn);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => LoginView()),
@@ -173,29 +230,37 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
 abstract class LeagueListItem {
   Widget buildName(BuildContext buildContext);
   Widget buildData(BuildContext buildContext);
-  Widget buildLogo(BuildContext buildContext);
+  int getID();
 }
 
 class LeagueDataItem implements LeagueListItem {
+  const LeagueDataItem({
+    this.name,
+    this.commissioner,
+    this.id,
+  });
 
+  final int id;
   final String name;
-  final Icon logo;
   final String commissioner;
 
-  LeagueDataItem(this.name, this.commissioner, this.logo);
+  factory LeagueDataItem.fromJson(Map<String, dynamic> json) {
+    if (json == null) {
+      throw FormatException("Null JSON provided to LeagueDataItem");
+    }
+    return LeagueDataItem(
+      name: json['league_name'],
+      commissioner: json['cname'],
+      id: json['league_id'],
+    );
+  }
 
   Widget buildData(BuildContext buildContext) {
-    return Text(commissioner);
+    return Text("Commissioner: " + this.commissioner.toString());
   }
 
-  @override
-  Widget buildLogo(BuildContext buildContext) {
-    return logo;
-  }
-
-  @override
   Widget buildName(BuildContext buildContext) {
-    return Text(name);
+    return Text(this.name);
   }
-
+  int getID() {return id;}
 }

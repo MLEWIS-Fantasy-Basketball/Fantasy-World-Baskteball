@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mlewis_fantasy_basketball/AllPlayersListView.dart';
 import 'package:mlewis_fantasy_basketball/CreateOwnerView.dart';
+import 'package:mlewis_fantasy_basketball/CreateLeagueView.dart';
 import 'package:mlewis_fantasy_basketball/Utils.dart';
 
 void main() {
@@ -119,6 +120,19 @@ class _LoginFormState extends State<LoginForm> {
                     },
                     child: Text('Login'),
                   ),
+                ),
+                ButtonTheme(
+                    minWidth: 250,
+                    height: 100,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CreateLeagueView()),
+                        );
+                      },
+                      child: Text('Become a Commissioner'),
+                    )
                 ),
                 ButtonTheme(
                     minWidth: 250,

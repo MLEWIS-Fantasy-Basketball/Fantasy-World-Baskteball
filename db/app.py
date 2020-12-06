@@ -85,6 +85,29 @@ class Owner(db.Model):
     def __repr__(self):
         return f'<Player: ID {self.id}, description {self.username}>'
 
+class League(db.Model):
+    __tablename__ = 'league' # specify the table name if it is different from class name
+    __table_args__ = {'extend_existing': True}
+    league_id = db.Column(db.Integer, primary_key=True) # define ID
+    commissioner_id = db.Column(db.Integer, nullable=False)
+    league_name= db.Column(db.String(), nullable=False) # define description
+    number_of_teams = db.Column(db.Integer, nullable=False)
+    teams_ids = db.Column(db.String())
+
+    # for debug print object information purpose
+    def __repr__(self):
+        return f'<Player: ID {self.id}, description {self.username}>'
+
+    def as_dict(self):
+        attributes = dict()
+        attributes['league_id'] = self.league_id
+        attributes['commissioner_id'] = self.commissioner_id
+        attributes['league_name'] = self.league_name
+        attributes['number_of_teams'] = self.number_of_teams
+        attributes['teams_ids'] = self.teams_ids
+        attributes['cname'] = Owner.query.get(self.commissioner_id).username
+        return attributes
+
 
 #db.create_all() # create database based on class definition
 
@@ -93,20 +116,29 @@ class Owner(db.Model):
 # def index():
 #     return redirect(url_for('get_list_teams', team_id=1))
 
-@app.route('/owner/create', methods=['POST'])
-def create_owner():
+@app.route('/league/create', methods=['POST'])
+def create_league():
     error = False
     body = {}
     try:
         req = request.get_json()
         us = req['username']
         pw = req['password']
-        team = Team(name="change this later", wins = 0, losses = 0, owner_id = 1, league_id = 1, player_ids = "")
+        tn = req['team_name']
+        name = req['league_name']
+        num_teams = int(req['number_of_teams'])
         owner = Owner(username = us, password = pw, team_id = 1)
-        #team.owner_id = owner.owner_id
+        db.session.add(owner)
+        db.session.commit()
+        league = League(league_name = name, number_of_teams = num_teams, commissioner_id = owner.owner_id, teams_ids = "1")
+        db.session.add(league)
+        db.session.commit()
+        team = Team(name = tn, wins = 0, losses = 0, owner_id = owner.owner_id, league_id = league.league_id, player_ids = "")
         db.session.add(team)
         db.session.commit()
-        db.session.add(owner)
+        owner.team_id = team.id
+        db.session.commit()
+        league.teams_ids = team.id + ","
         db.session.commit()
     except:
         error = True
@@ -118,6 +150,44 @@ def create_owner():
         abort(400)
     else:
         return jsonify(body)
+
+@app.route('/owner/create', methods=['POST'])
+def create_owner():
+    error = False
+    body = {}
+    try:
+        req = request.get_json()
+        us = req['username']
+        pw = req['password']
+        tn = req['team_name']
+        li = req['league_id']
+        owner = Owner(username = us, password = pw, team_id = 1)
+        db.session.add(owner)
+        db.session.commit()
+        team = Team(name = tn, wins = 0, losses = 0, owner_id = owner.owner_id, league_id = li, player_ids = "")
+        db.session.add(team)
+        db.session.commit()
+        owner.team_id = team.id
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(400)
+    else:
+        return jsonify(body)
+
+@app.route('/leaguelist', methods=['GET']) # tell Flask what URL should trigger the function
+# the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
+def get_list_leagues():
+    leagues = League.query.order_by('league_id').all()
+    leagues_as_dicts = []
+    for l in leagues:
+         leagues_as_dicts.append(l.as_dict())
+    return (jsonify(leagues_as_dicts))
 
 @app.route('/teamlists/<team_id>') # tell Flask what URL should trigger the function
 # the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
