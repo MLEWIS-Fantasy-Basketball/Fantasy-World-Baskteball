@@ -3,8 +3,28 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from pprint import pprint
+import hashlib
+import binascii
+import os
 import json
 import sys
+
+def hash_password(password):
+    salt = hashlib.sha256(os.urandom(60)).hexdigest().encode('ascii')
+    pwdhash = hashlib.pbkdf2_hmac('sha512', password.encode('utf-8'),
+                                salt, 100000)
+    pwdhash = binascii.hexlify(pwdhash)
+    return (salt + pwdhash).decode('ascii')
+
+def verify_password(stored_password, provided_password):
+    salt = stored_password[:64]
+    stored_password = stored_password[64:]
+    pwdhash = hashlib.pbkdf2_hmac('sha512',
+                                  provided_password.encode('utf-8'),
+                                  salt.encode('ascii'),
+                                  100000)
+    pwdhash = binascii.hexlify(pwdhash).decode('ascii')
+    return pwdhash == stored_password
 
 app = Flask(__name__)
 
@@ -127,7 +147,7 @@ def create_league():
         tn = req['team_name']
         name = req['league_name']
         num_teams = int(req['number_of_teams'])
-        owner = Owner(username = us, password = pw, team_id = 1)
+        owner = Owner(username = us, password = hash_password(pw), team_id = 1)
         db.session.add(owner)
         db.session.commit()
         league = League(league_name = name, number_of_teams = num_teams, commissioner_id = owner.owner_id, teams_ids = "1")
@@ -161,13 +181,15 @@ def create_owner():
         pw = req['password']
         tn = req['team_name']
         li = int(req['league_id'])
-        owner = Owner(username = us, password = pw, team_id = 1)
+        owner = Owner(username = us, password = hash_password(pw), team_id = 1)
         db.session.add(owner)
         db.session.commit()
         team = Team(name = tn, wins = 0, losses = 0, owner_id = owner.owner_id, league_id = li, player_ids = "")
         db.session.add(team)
         db.session.commit()
         owner.team_id = team.id
+        db.session.commit()
+        League.query.get(li).teams_ids += str(team.id) + ","
         db.session.commit()
     except:
         error = True
@@ -192,9 +214,15 @@ def login():
         pw = req['password']
         body['username'] = us
         body['password'] = pw
-        owner = Owner.query.filter_by(username=us).filter_by(password=pw).first()
-        if owner is not None:
-            body['success'] = True
+        owners = Owner.query.filter_by(username=us)
+        if owners.first() is not None:
+            for owner in owners:
+                password = owner.password
+                pprint(password)
+                pprint(pw)
+                if verify_password(password.strip(), pw):
+                    body['success'] = True
+
     except:
         error = True
         db.session.rollback()

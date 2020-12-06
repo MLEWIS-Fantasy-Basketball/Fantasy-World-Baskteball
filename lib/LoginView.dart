@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mlewis_fantasy_basketball/AllPlayersListView.dart';
 import 'package:mlewis_fantasy_basketball/CreateOwnerView.dart';
 import 'package:mlewis_fantasy_basketball/CreateLeagueView.dart';
+import 'package:mlewis_fantasy_basketball/MyTeamView.dart';
 import 'package:mlewis_fantasy_basketball/Utils.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -150,7 +151,7 @@ class _LoginFormState extends State<LoginForm> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => AllPlayersListView()),
+                                  builder: (context) => MyTeamView(username: us)),
                             )
                           } else {
                             Scaffold.of(context).showSnackBar(SnackBar(content: Text('Login failed!')))
