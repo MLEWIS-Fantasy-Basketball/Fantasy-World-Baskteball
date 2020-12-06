@@ -62,67 +62,80 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     // Build a Form widget using the _formKey created above.
-    return Form(
-        key: _formKey,
-        child: Column(
-            children: <Widget>[
-              // Username Field.
-              TextFormField(
-                  controller: usernameController,
+    return Container(
+        margin: EdgeInsets.all(24),
+        padding: EdgeInsets.only(top: 200),
+        child: Form(
+          key: _formKey,
+          child: Column(
+              children: <Widget>[
+                // Username Field.
+                TextFormField(
+                    controller: usernameController,
+                    decoration: const InputDecoration(
+                      icon: Icon(Icons.person_outline),
+                      labelText: 'Username',
+                      filled: true,
+                    ),
+                    validator: (value) {
+                      if (!validUsername(value)) {
+                        return 'Please enter a valid username';
+                      }
+                      return null;
+                    },
+                ),
+                // Password Field
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
                   decoration: const InputDecoration(
-                    icon: Icon(Icons.person_outline),
-                    labelText: 'Username',
+                    icon: Icon(Icons.person),
+                    labelText: 'Password',
+                    helperText: 'WARNING: Do not use password you use somewhere else! As an app built for a databases class, we cannot guarantee optimal security.',
                     filled: true,
                   ),
                   validator: (value) {
-                    if (!validUsername(value)) {
-                      return 'Please enter a valid username';
+                    if (!validPassword(value)) {
+                      return 'Please enter a valid password';
                     }
                     return null;
                   },
-              ),
-              // Password Field
-              TextFormField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.person),
-                  labelText: 'Password',
-                  helperText: 'WARNING: Do not use password you use somewhere else! As an app built for a databases class, we cannot guarantee optimal security.',
-                  filled: true,
                 ),
-                validator: (value) {
-                  if (!validPassword(value)) {
-                    return 'Please enter a valid password';
-                  }
-                  return null;
-                },
-              ),
-              ElevatedButton(
-                onPressed: () {
-                // Validate returns true if the form is valid, otherwise false.
-                  if (_formKey.currentState.validate()) {
-                  // If the form is valid, display a snackbar. In the real world
-                  // you'd often call a server or save the information in a database.
-                    Scaffold.of(context).showSnackBar(SnackBar(content: Text('Logging in...')));
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AllPlayersListView()),
-                    );
-                  }
-                },
-                child: Text('Login'),
-              ),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CreateOwnerView()),
-                    );
-                  },
-                  child: Text('Become an Owner'))
-            ]
-        )
+                ButtonTheme(
+                  minWidth: 250,
+                  height: 100,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Validate returns true if the form is valid, otherwise false.
+                      if (_formKey.currentState.validate()) {
+                        // If the form is valid, display a snackbar. In the real world
+                        // you'd often call a server or save the information in a database.
+                        Scaffold.of(context).showSnackBar(SnackBar(content: Text('Logging in...')));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => AllPlayersListView()),
+                        );
+                      }
+                    },
+                    child: Text('Login'),
+                  ),
+                ),
+                ButtonTheme(
+                    minWidth: 250,
+                    height: 100,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CreateOwnerView()),
+                      );
+                    },
+                    child: Text('Become an Owner'),
+                  )
+                ),
+              ]
+          )
+      )
     );
   }
 }

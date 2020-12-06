@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
@@ -18,13 +20,13 @@ class ListViewState extends StatefulWidget {
 }
 
 class _ListViewState extends State<ListViewState> {
-  List<PlayerListItem> players = List<PlayerListItem>.generate(100, (index) => PlayerDataItem('name', 'team', List.empty()));
+  List<PlayerDataItem> players = [];//List<PlayerListItem>.generate(100, (index) => PlayerDataItem('name', 'team', List.empty()));
 
   var jsonResponse;
-  bool gotPlayers = false;
+  bool _gotPlayers = false;
   int _itemCount = 0;
 
-  String _Query = "playerlists/1";
+  String _query = "playerlists/1";
 
   Future<void> getPlayers(query) async {
     String url = "http://127.0.0.1:5000/" + query;
@@ -32,34 +34,24 @@ class _ListViewState extends State<ListViewState> {
     if (response.statusCode == 200 || response.statusCode == 302) {
       setState(() {
         jsonResponse = convert.jsonDecode(response.body);
-        debugPrint(response.body[1]);
+        debugPrint(jsonResponse[1].toString());
         _itemCount = jsonResponse.length;
+        for (var player in jsonResponse) {
+          players.add(PlayerDataItem.fromJson(player));
+        }
       });
       debugPrint("Number of players found : $_itemCount");
     } else {
-      print("Request failed with status: ${response.statusCode}.");
+      debugPrint("Request failed with status: ${response.statusCode}.");
     }
   }
-
-  // void getPlayers() async {
-  //   var connection = PostgreSQLConnection("localhost", 5432, "fantasy_basketball");
-  //   await connection.open();
-  //   List<List<dynamic>> results = await connection.query("SELECT * FROM public.player");
-  //
-  //   for (final row in results) {
-  //     print(row[0]);
-  //     print(row[1]);
-  //
-  //   }
-  // }
-
 
 
   @override
   Widget build(BuildContext context) {
-    if(!gotPlayers) {
-      getPlayers(_Query);
-      gotPlayers = true;
+    if(!_gotPlayers) {
+      getPlayers(_query);
+      _gotPlayers = true;
     }
     final String viewTitle = 'Free Agents';
     return Scaffold(
@@ -70,11 +62,36 @@ class _ListViewState extends State<ListViewState> {
           itemCount: players.length,
           itemBuilder: (context, index) {
             final player = players[index];
-            return Card(
-                child: ListTile(
-                  title: player.buildName(context),
-                  subtitle: player.buildData(context),
-                )
+            return Container(
+              margin: EdgeInsets.all(5),
+              padding: EdgeInsets.only(left: 400, right: 400),
+              child: Card(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ListTile(
+                      leading: Icon(Icons.assignment_ind),
+                      title: player.buildName(context),
+                      subtitle: player.buildData(context),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        TextButton(
+                          child: const Text('ADD PLAYER'),
+                          onPressed: () {/* ... */},
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          child: const Text('SEE MORE STATS'),
+                          onPressed: () {/* ... */},
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             );
           }),
     );
@@ -87,17 +104,48 @@ abstract class PlayerListItem {
 }
 
 class PlayerDataItem implements PlayerListItem {
+  const PlayerDataItem({
+  this.name,
+  this.onTeam,
+  this.position,
+  this.realTeam,
+  this.realLeague,
+  this.fantasyTeam,
+    this.id,
+    this.stats,
+  });
+
+  final int id;
   final String name;
-  final String team;
+  final bool onTeam;
+  final String position;
+  final String realTeam;
+  final String realLeague;
+  final String fantasyTeam;
   final List<double> stats;
 
-  PlayerDataItem(this.name, this.team, this.stats);
+  factory PlayerDataItem.fromJson(Map<String, dynamic> json) {
+    if (json == null) {
+      throw FormatException("Null JSON provided to PlayerDataItem");
+    }
+
+    return PlayerDataItem(
+      id: json['id'],
+      name: json['name'],
+      onTeam: json['on_team'],
+      position: json['position'],
+      realTeam: json['real_team_name'],
+      realLeague: json['real_league_name'],
+      fantasyTeam: 'Unassigned',
+      stats: List.empty(),
+    );
+  }
 
   Widget buildData(BuildContext buildContext) {
-    return Text(team);
+    return Text(this.realTeam + ", " + this.position + ", ");
   }
 
   Widget buildName(BuildContext buildContext) {
-    return Text(name);
+    return Text(this.name);
   }
 }

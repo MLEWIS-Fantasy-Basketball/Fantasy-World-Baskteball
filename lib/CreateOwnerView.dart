@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mlewis_fantasy_basketball/LoginView.dart';
 import 'package:mlewis_fantasy_basketball/Utils.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:http/http.dart' as http;
 
 final Icon tempIcon = new Icon(
-  Icons.beach_access,
+  Icons.sports_basketball,
   color: Colors.blue,
   size: 36.0,
 );
@@ -29,9 +33,10 @@ class OwnerCreationForm extends StatefulWidget {
 
 class _OwnerCreationState extends State<OwnerCreationForm> {
 
-  List<LeagueListItem> leagues = List<LeagueListItem>.generate(5, (index) => LeagueDataItem('League $index', 'Commissioner $index', tempIcon));
+  List<LeagueListItem> leagues = List<LeagueListItem>.generate(1, (index) => LeagueDataItem("Matthew's League for Hoopers", 'Commissioner: Matthew Barton', tempIcon));
 
   final _formKey = GlobalKey<FormState>();
+
 
   final usernameController = TextEditingController();
   final password1Controller = TextEditingController();
@@ -45,8 +50,28 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
     super.dispose();
   }
 
+  void createAccount(String username, String password) async {
+    final http.Response response = await http.post(
+      'http://127.0.0.1:5000/owner/create',
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'username': username,
+        'password': password,
+      }));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Account successfully created");
+    } else {
+    throw Exception('Failed to create account');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    String us = "";
+    String pw = "";
     return Form(
         key: _formKey,
         child: Column(
@@ -65,6 +90,9 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                 }
                 return null;
               },
+              onSaved: (String value) {
+                us = value;
+              }
             ),
             // New Password Field.
             TextFormField(
@@ -97,6 +125,9 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                 }
                 return null;
               },
+              onSaved: (String value) {
+                pw = value;
+              }
             ),
             Text('Select what leagues you would like to join'),
             // Possible Leagues to join
@@ -108,16 +139,24 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                   itemBuilder: (context, index) {
                     final league = leagues[index];
                     return Card(
-                        child: ListTile(
-                          leading: league.buildLogo(context),
+                        child: CheckboxListTile(
+                          secondary: league.buildLogo(context),
                           title: league.buildName(context),
                           subtitle: league.buildData(context),
+                          value: timeDilation != 1.0,
+                          onChanged: (bool value) {
+                            setState(() {
+                              timeDilation = value ? 2.0 : 1.0;
+                            });
+                          },
                         )
                     );
                   }),
             ),
             ElevatedButton(onPressed: () {
               if (_formKey.currentState.validate()) {
+                _formKey.currentState.save();
+                createAccount(us, pw);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => LoginView()),
