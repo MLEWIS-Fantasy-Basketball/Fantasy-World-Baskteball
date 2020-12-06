@@ -1,21 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_cors import CORS
+from pprint import pprint
+import json
 import sys
 
-app = Flask(__name__) 
+app = Flask(__name__)
+
+CORS(app)
 # config the SQLAlchemy connection to the database as your own database
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Cocoa1@localhost:5432/Fantasy_Basketball'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:@localhost:5432/fantasy_basketball'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app) 
+db = SQLAlchemy(app)
 
-migrate = Migrate(app, db)
+# migrate = Migrate(app, db)
 
 class Team(db.Model):
     __tablename__ = 'team' # specify the table name if it is different from class name
-    __table_args__ = {'extend_existing': True} 
-    id = db.Column('team_id', db.Integer, primary_key=True)#db.Integer, primary_key=True) # define ID 
+    __table_args__ = {'extend_existing': True}
+    id = db.Column('team_id', db.Integer, primary_key=True)#db.Integer, primary_key=True) # define ID
     owner_id = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(), nullable=False) # define description
     wins = db.Column(db.Integer, nullable=False)
@@ -28,11 +33,23 @@ class Team(db.Model):
     def __repr__(self):
         return f'<Team: ID {self.id}, description {self.description}>'
 
+    def as_dict(self):
+        attributes = dict()
+        attributes['id'] = self.id
+        attributes['owner_id'] = self.owner_id
+        attributes['name'] = self.name
+        attributes['wins'] = self.wins
+        attributes['losses'] = self.loses
+        attributes['player_ids'] = self.player_ids
+        return attributes
+
+
+
 
 class Player(db.Model):
     __tablename__ = 'player' # specify the table name if it is different from class name
-    __table_args__ = {'extend_existing': True} 
-    id = db.Column('player_id', db.Integer, primary_key=True) # define ID 
+    __table_args__ = {'extend_existing': True}
+    id = db.Column('player_id', db.Integer, primary_key=True) # define ID
     name = db.Column(db.String(), nullable=False) # define description
     on_team = db.Column(db.Boolean, nullable=False)
     position = db.Column(db.String(), nullable=False)
@@ -43,26 +60,37 @@ class Player(db.Model):
 
     # for debug print object information purpose
     def __repr__(self):
-        return f'<Player: ID {self.id}, description {self.description}>'
+        return f'<Player: ID {self.id}, description {self.name}>'
+
+    def as_dict(self):
+        attributes = dict()
+        attributes['id'] = self.id
+        attributes['name'] = self.name
+        attributes['on_team'] = self.on_team
+        attributes['position'] = self.position
+        attributes['real_team_name'] = self.real_team_name
+        attributes['real_league_name'] = self.real_league_name
+        return attributes
+
 
 
 
 #db.create_all() # create database based on class definition
 
 
-@app.route('/')
-def index():
-    return redirect(url_for('get_list_teams', team_id=1))
+# @app.route('/')
+# def index():
+#     return redirect(url_for('get_list_teams', team_id=1))
 
-@app.route('/lists/<team_id>') # tell Flask what URL should trigger the function
+@app.route('/teamlists/<team_id>') # tell Flask what URL should trigger the function
 # the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
 def get_list_teams(team_id):
-    
-    teams = Team.query.filter_by(id=team_id).order_by('team_id').all()
-    
-    return render_template('index.html',teams=teams)
 
-@app.route('/lists/create', methods=['POST'])
+    teams = Team.query.filter_by(id=team_id).order_by('team_id').all()
+
+    return jsonify(teams)
+
+@app.route('/teamlists/create', methods=['POST'])
 def create_team():
     error = False
     body = {}
@@ -104,19 +132,20 @@ def delete_team(team_id):
         return jsonify({'success': True})
 
 
-@app.route('/')
-def PlayersIndex():
-    return redirect(url_for('get_list_players', list_id=1))
+# @app.route('/', methods=['GET'])
+# def PlayersIndex():
+#     return redirect(url_for('get_list_players', list_id=1))
 
-@app.route('/lists/<list_id>') # tell Flask what URL should trigger the function
-# the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
+
+@app.route('/playerlists/<list_id>', methods=['GET']) # tell Flask what URL should trigger the function # the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
 def get_list_players(list_id):
-    
-    players = Player.query.filter_by(id=list_id).order_by('player_id').all()
-    
-    return render_template('index.html',players=players)
+    players = Player.query.order_by('player_id').all()
+    players_as_dicts = []
+    for p in players:
+         players_as_dicts.append(p.as_dict())
+    return (jsonify(players_as_dicts))
 
-@app.route('/lists/create', methods=['POST'])
+@app.route('/playerlists/create', methods=['POST'])
 def create_player():
     error = False
     body = {}
@@ -156,4 +185,3 @@ def delete_player(player_id):
         abort(400)
     else:
         return jsonify({'success': True})
-

@@ -2,15 +2,15 @@ import psycopg2
 import pandas as pd
 import hashlib
 
-user = "<fill in user>"
+user = "postgres"
 
-try: 
-    conn = psycopg2.connect("dbname = fantasy_basketball user = " + user)
+try:
+    conn = psycopg2.connect("dbname = fantasy_basketball user = postgres")
 
 except:
     print("Could not open connection.")
 
-df = pd.read_csv('/Fantasy-World-Baskteball/db/players_stats_by_season_full_details.csv', header = 0)
+df = pd.read_csv('C:/Users/charg/AndroidStudioProjects/Fantasy-World-Baskteball/db/players_stats_by_season_full_details.csv', header = 0)
 
 playerInfo = df.drop_duplicates(('League', 'Player'))[['League','Player','Team','height_cm']].to_numpy()
 
@@ -25,20 +25,20 @@ for line in playerInfo:
         pos = 'C'
     else:
         pos = 'F'
-        
+
     ret = [line[1], False, pos, line[2], line[0]]
     playerTableInfo.append(ret)
-    
+
 # print(playerTableInfo)
 
 
 mycursor = conn.cursor()
-    
+
 sql = "INSERT INTO public.player (name, on_team, position, real_team_name, real_league_name) VALUES (%s, %s, %s, %s, %s)"
 mycursor.executemany(sql, playerTableInfo)
 conn.commit()
 
-    
+
 mycursor.execute("SELECT player_id,name,real_team_name,real_league_name FROM public.player")
 playerIDData = mycursor.fetchall()
 pIDDF = pd.DataFrame(playerIDData, columns = ['player_id','Player','Team','League'])
