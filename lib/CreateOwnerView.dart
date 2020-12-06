@@ -78,7 +78,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
     super.dispose();
   }
 
-  void createAccount(String username, String password, String teamName) async {
+  void createAccount(String username, String password, String teamName, int leagueId) async {
     final http.Response response = await http.post(
       'http://127.0.0.1:5000/owner/create',
       headers: <String, String>{
@@ -88,6 +88,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
         'username': username,
         'password': password,
         'team_name': teamName,
+        'league_id': leagueId.toString(),
       }));
     if (response.statusCode == 201 || response.statusCode == 200) {
       print("Account successfully created");
@@ -96,6 +97,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
     }
   }
 
+  int leagueId;
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +108,6 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
     String us = "";
     String pw = "";
     String tn = "";
-    List<int> league_ids = [];
     return Form(
         key: _formKey,
         child: Column(
@@ -152,6 +153,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
               decoration: const InputDecoration(
                 icon: Icon(Icons.done),
                 labelText: 'Confirm Password',
+                helperText: 'WARNING: Do not use password you use somewhere else! As an app built for a databases class, we cannot guarantee optimal security.',
                 filled: true,
               ),
               validator: (value) {
@@ -184,7 +186,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
             ),
             Container(
                 padding: EdgeInsets.only(top: 20, bottom: 20),
-              child: Text('Select what leagues you would like to join'),
+              child: Text('Select what league you would like to join'),
             ),
             // Possible Leagues to join
             Container(
@@ -195,15 +197,15 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
                   itemBuilder: (context, index) {
                     final league = leagues[index];
                     return Card(
-                        child: CheckboxListTile(
+                        child: RadioListTile(
                           secondary: bballIcon,
                           title: league.buildName(context),
                           subtitle: league.buildData(context),
-                          value: timeDilation != 1.0,
-                          onChanged: (bool value) {
+                          value: league.getID(),
+                          groupValue: leagueId,
+                          onChanged: (int value) {
                             setState(() {
-                              timeDilation = value ? 2.0 : 1.0;
-                              league_ids.add(league.getID());
+                              leagueId = value;
                             });
                           },
                         )
@@ -213,7 +215,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
             ElevatedButton(onPressed: () {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
-                createAccount(us, pw, tn);
+                createAccount(us, pw, tn, leagueId);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => LoginView()),

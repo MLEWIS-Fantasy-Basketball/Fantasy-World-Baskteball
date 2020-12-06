@@ -138,7 +138,7 @@ def create_league():
         db.session.commit()
         owner.team_id = team.id
         db.session.commit()
-        league.teams_ids = team.id + ","
+        league.teams_ids = str(team.id) + ","
         db.session.commit()
     except:
         error = True
@@ -160,7 +160,7 @@ def create_owner():
         us = req['username']
         pw = req['password']
         tn = req['team_name']
-        li = req['league_id']
+        li = int(req['league_id'])
         owner = Owner(username = us, password = pw, team_id = 1)
         db.session.add(owner)
         db.session.commit()
@@ -169,6 +169,32 @@ def create_owner():
         db.session.commit()
         owner.team_id = team.id
         db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(400)
+    else:
+        return jsonify(body)
+
+
+@app.route('/owner/login', methods=['POST'])
+def login():
+    error = False
+    body = {}
+    body['success'] = False
+    try:
+        req = request.get_json()
+        us = req['username']
+        pw = req['password']
+        body['username'] = us
+        body['password'] = pw
+        owner = Owner.query.filter_by(username=us).filter_by(password=pw).first()
+        if owner is not None:
+            body['success'] = True
     except:
         error = True
         db.session.rollback()

@@ -3,6 +3,11 @@ import 'package:mlewis_fantasy_basketball/AllPlayersListView.dart';
 import 'package:mlewis_fantasy_basketball/CreateOwnerView.dart';
 import 'package:mlewis_fantasy_basketball/CreateLeagueView.dart';
 import 'package:mlewis_fantasy_basketball/Utils.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:convert' as convert;
+
+
 
 void main() {
   runApp(LoginView());
@@ -60,9 +65,34 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
+  var jsonResponse;
+
+  Future<bool> login(String username, String password) async {
+    final http.Response response = await http.post(
+        'http://127.0.0.1:5000/owner/login',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'username': username,
+          'password': password,
+        }));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Login info sent");
+      var json = convert.jsonDecode(response.body);
+      debugPrint(json.toString());
+      return json['success'];
+    } else {
+      return false;
+      //throw Exception('Failed to send login info');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    // Build a Form widget using the _formKey created above.
+    String us = "";
+    String pw = "";
     return Container(
         margin: EdgeInsets.all(24),
         padding: EdgeInsets.only(top: 200),
@@ -84,6 +114,9 @@ class _LoginFormState extends State<LoginForm> {
                       }
                       return null;
                     },
+                    onSaved: (String value) {
+                      us = value;
+                    },
                 ),
                 // Password Field
                 TextFormField(
@@ -92,7 +125,6 @@ class _LoginFormState extends State<LoginForm> {
                   decoration: const InputDecoration(
                     icon: Icon(Icons.person),
                     labelText: 'Password',
-                    helperText: 'WARNING: Do not use password you use somewhere else! As an app built for a databases class, we cannot guarantee optimal security.',
                     filled: true,
                   ),
                   validator: (value) {
@@ -101,20 +133,29 @@ class _LoginFormState extends State<LoginForm> {
                     }
                     return null;
                   },
+                  onSaved: (String value) {
+                    pw = value;
+                  },
                 ),
                 ButtonTheme(
                   minWidth: 250,
                   height: 100,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Validate returns true if the form is valid, otherwise false.
                       if (_formKey.currentState.validate()) {
-                        // If the form is valid, display a snackbar. In the real world
-                        // you'd often call a server or save the information in a database.
+                        _formKey.currentState.save();
                         Scaffold.of(context).showSnackBar(SnackBar(content: Text('Logging in...')));
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => AllPlayersListView()),
+                        login(us,pw).then((value) => {
+                          if(value) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AllPlayersListView()),
+                            )
+                          } else {
+                            Scaffold.of(context).showSnackBar(SnackBar(content: Text('Login failed!')))
+                          }
+                          }
                         );
                       }
                     },

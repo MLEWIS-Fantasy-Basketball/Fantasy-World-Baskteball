@@ -162,6 +162,7 @@ class _LeagueCreationState extends State<LeagueCreationForm> {
               decoration: const InputDecoration(
                 icon: Icon(Icons.person_add),
                 labelText: 'New Password',
+                helperText: 'WARNING: Do not use password you use somewhere else! As an app built for a databases class, we cannot guarantee optimal security.',
                 filled: true,
               ),
               validator: (value) {
