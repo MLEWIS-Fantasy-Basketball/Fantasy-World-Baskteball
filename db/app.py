@@ -212,16 +212,24 @@ def login():
         req = request.get_json()
         us = req['username']
         pw = req['password']
-        body['username'] = us
-        body['password'] = pw
+        body['username'] = us.strip()
+        #body['password'] = pw
         owners = Owner.query.filter_by(username=us)
         if owners.first() is not None:
             for owner in owners:
                 password = owner.password
-                pprint(password)
-                pprint(pw)
                 if verify_password(password.strip(), pw):
                     body['success'] = True
+                    body['owner_id'] = owner.owner_id
+                    team_id = Team.query.filter_by(owner_id = owner.owner_id).first().id
+                    body['team_id'] = team_id
+                    body['team_name'] = Team.query.get(team_id).name.strip()
+                    leagues = League.query.all()
+                    for league in leagues:
+                        teams_ids = league.teams_ids
+                        if str(team_id) in teams_ids:
+                            body['league_id'] = league.league_id
+                            body['league_name'] = league.league_name.strip()
 
     except:
         error = True

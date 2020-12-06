@@ -52,6 +52,17 @@ class LoginForm extends StatefulWidget {
   _LoginFormState createState() => _LoginFormState();
 }
 
+class TeamInfo {
+  final int teamId;
+  final int ownerId;
+  final String username;
+  final String teamName;
+  final int leagueId;
+  final String leagueName;
+  final bool success;
+  TeamInfo(this.teamId, this.ownerId, this.username, this.teamName, this.leagueName, this.leagueId, this.success);
+}
+
 class _LoginFormState extends State<LoginForm> {
 
   final _formKey = GlobalKey<FormState>();
@@ -68,7 +79,7 @@ class _LoginFormState extends State<LoginForm> {
 
   var jsonResponse;
 
-  Future<bool> login(String username, String password) async {
+  Future<TeamInfo> login(String username, String password) async {
     final http.Response response = await http.post(
         'http://127.0.0.1:5000/owner/login',
         headers: <String, String>{
@@ -82,11 +93,19 @@ class _LoginFormState extends State<LoginForm> {
       print("Login info sent");
       var json = convert.jsonDecode(response.body);
       debugPrint(json.toString());
-      return json['success'];
-    } else {
-      return false;
-      //throw Exception('Failed to send login info');
+      if (json['success']) {
+        return new TeamInfo(
+            json['team_id'],
+            json['owner_id'],
+            json['username'],
+            json['team_name'].trim(),
+            json['league_name'],
+            json['league_id'],
+            true);
+      }
     }
+    return new TeamInfo(null, null, null, null, null, null, false);
+    //throw Exception('Failed to send login info');
   }
 
 
@@ -147,11 +166,11 @@ class _LoginFormState extends State<LoginForm> {
                         _formKey.currentState.save();
                         Scaffold.of(context).showSnackBar(SnackBar(content: Text('Logging in...')));
                         login(us,pw).then((value) => {
-                          if(value) {
+                          if(value.success) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => MyTeamView(username: us)),
+                                  builder: (context) => MyTeamView(info: value)),
                             )
                           } else {
                             Scaffold.of(context).showSnackBar(SnackBar(content: Text('Login failed!')))
