@@ -314,6 +314,7 @@ def add_player_to_team(player_id, team_id):
             player = Player.query.filter_by(id=player_id).first()
             player.on_team = True
             team.player_ids = new_player_ids
+            db.session.add(player)
             db.session.commit()
     except:
         error = True
@@ -458,7 +459,7 @@ def delete_player(player_id):
 @app.route('/League/<league_id>')
 def showLeagues(league_id):
     league = League.query.filter_by(league_id=league_id)
-    playersDict[]
+    playersDict = []
     team_ids = league.teams_ids.split(",")
     for team_id in teams_ids:
         team = team.query.filter_by(id=team_id)
@@ -468,4 +469,3 @@ def showLeagues(league_id):
             player = Player.query.filter_by(id=p).first()
             playersDict.append(player.name)
     return jsonify((league.league_name, playersDict))
-    
