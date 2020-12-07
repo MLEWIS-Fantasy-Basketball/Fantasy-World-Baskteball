@@ -283,15 +283,15 @@ def create_team():
         return jsonify(body)
 
 # Need to test
-@app.route('Team/<team_id>/<player_id>', methods=['POST'])
+@app.route('/Team/<team_id>/<player_id>', methods=['POST'])
 def add_player_to_team(player_id, team_id):
     error = False
     body = {}
     try:
         team = Team.query.filter_by(id=team_id).first()
         if len(team.player_ids) < 100:
-            new_player_ids = team.player_ids.append(player_id + ',')
-            player = Player.query.filter_by(id=player_id).first().update
+            new_player_ids = team.player_ids + str(player_id) + ','
+            player = Player.query.filter_by(id=player_id).first()
             player.on_team = True
             team.player_ids = new_player_ids
             db.session.commit()
@@ -305,9 +305,9 @@ def add_player_to_team(player_id, team_id):
         abort(400)
     else:
         return jsonify(body)
- 
+
 # Need to test
-@app.route('Team/<team_id>/<player_id>', methods=['POST'])
+@app.route('/Team/<team_id>/<player_id>', methods=['POST'])
 def remove_player_from_team(player_id, team_id):
     error = False
     body = {}
@@ -321,7 +321,7 @@ def remove_player_from_team(player_id, team_id):
                 player_ids = player_ids.replace(str(player_id) + ',', '')
                 team.player_ids = player_ids
                 db.session.commit()
-    except: 
+    except:
         error = True
         db.session.rollback()
         print(sys.exc_info())
@@ -331,9 +331,9 @@ def remove_player_from_team(player_id, team_id):
         abort(400)
     else:
         return jsonify(body)
-    
-# Need to add function that reroutes when trying to add move than team can hold. 
-# Possibly add a number of player variable to hold internally or make up to league comissioner. 
+
+# Need to add function that reroutes when trying to add move than team can hold.
+# Possibly add a number of player variable to hold internally or make up to league comissioner.
 
 @app.route('/Team/<team_id>/delete', methods=['DELETE'])
 def delete_team(team_id):
@@ -360,6 +360,21 @@ def delete_team(team_id):
 @app.route('/playerlists/<list_id>', methods=['GET']) # tell Flask what URL should trigger the function # the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
 def get_list_players(list_id):
     players = Player.query.order_by('player_id').all()
+    players_as_dicts = []
+    for p in players:
+         players_as_dicts.append(p.as_dict())
+    return (jsonify(players_as_dicts))
+
+@app.route('/Team/<team_id>', methods=['GET']) # tell Flask what URL should trigger the function # the function is given a name which is used to generate URLs for that particular function and returns the message we want to display in browser, function name does not matter
+def get_team_players(team_id):
+    player_ids = Team.query.get(team_id).player_ids.split(',')
+    player_ids_ints = []
+    for player_id in player_ids:
+        if player_id != '':
+            player_ids_ints.append(int(player_id))
+    players = []
+    for pid in player_ids_ints:
+        players.append(Player.query.get(pid))
     players_as_dicts = []
     for p in players:
          players_as_dicts.append(p.as_dict())

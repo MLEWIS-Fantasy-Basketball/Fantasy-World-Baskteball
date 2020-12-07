@@ -1,35 +1,61 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mlewis_fantasy_basketball/LoginView.dart';
+import 'package:mlewis_fantasy_basketball/MyTeamView.dart';
 import 'dart:convert' as convert;
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // View for all free agent players
 class AllPlayersListView extends StatelessWidget {
 
+  final TeamInfo info;
+  AllPlayersListView({@required this.info});
 
   @override
   Widget build(BuildContext context) {
-    return ListViewState();
+    return ListViewState(info: info);
   }
 }
 
 class ListViewState extends StatefulWidget {
+  final TeamInfo info;
+  ListViewState({@required this.info});
   @override
-  _ListViewState createState() => _ListViewState();
+  _ListViewState createState() => _ListViewState(info: info);
 }
 
 class _ListViewState extends State<ListViewState> {
+  final TeamInfo info;
+  _ListViewState({@required this.info});
+
   List<PlayerDataItem> players = [];//List<PlayerListItem>.generate(100, (index) => PlayerDataItem('name', 'team', List.empty()));
 
   var jsonResponse;
   bool _gotPlayers = false;
   int _itemCount = 0;
 
-  String _query = "playerlists/1";
+  void addPlayerToTeam(int teamId, int playerId) async {
+    final http.Response response = await http.post(
+        'http://127.0.0.1:5000/Team/' + teamId.toString() + '/' + playerId.toString(),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'player_id': playerId.toString(),
+          'team_id': teamId.toString(),
+        }));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Player successfully added to team");
+    } else {
+      throw Exception('Failed to add player to team');
+    }
+  }
 
-  Future<void> getPlayers(query) async {
-    String url = "http://127.0.0.1:5000/" + query;
+
+  Future<void> getPlayers() async {
+    String url = "http://127.0.0.1:5000/playerlists/1";
     http.Response response = await http.get(url);
     if (response.statusCode == 200 || response.statusCode == 302) {
       setState(() {
@@ -50,7 +76,7 @@ class _ListViewState extends State<ListViewState> {
   @override
   Widget build(BuildContext context) {
     if(!_gotPlayers) {
-      getPlayers(_query);
+      getPlayers();
       _gotPlayers = true;
     }
     final String viewTitle = 'Free Agents';
@@ -62,37 +88,50 @@ class _ListViewState extends State<ListViewState> {
           itemCount: players.length,
           itemBuilder: (context, index) {
             final player = players[index];
-            return Container(
-              margin: EdgeInsets.all(5),
-              padding: EdgeInsets.only(left: 400, right: 400),
-              child: Card(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    ListTile(
-                      leading: Icon(Icons.assignment_ind),
-                      title: player.buildName(context),
-                      subtitle: player.buildData(context),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: <Widget>[
-                        TextButton(
-                          child: const Text('ADD PLAYER'),
-                          onPressed: () {/* ... */},
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          child: const Text('SEE MORE STATS'),
-                          onPressed: () {/* ... */},
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
-                  ],
+            if(!player.onTeam) {
+              return Container(
+                margin: EdgeInsets.all(5),
+                padding: EdgeInsets.only(left: 400, right: 400),
+                child: Card(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      ListTile(
+                        leading: Icon(Icons.assignment_ind),
+                        title: player.buildName(context),
+                        subtitle: player.buildData(context),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          TextButton(
+                            child: const Text('ADD PLAYER'),
+                            onPressed: () {
+                              addPlayerToTeam(info.teamId, player.id);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        MyTeamView(info: info)),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            child: const Text('SEE MORE STATS'),
+                            onPressed: () {
+                              /* ... */
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
+            }
+            return Container();
           }),
     );
   }
@@ -122,7 +161,7 @@ class PlayerDataItem implements PlayerListItem {
   final String realTeam;
   final String realLeague;
   final String fantasyTeam;
-  final List<double> stats;
+  final List<Stats> stats;
 
   factory PlayerDataItem.fromJson(Map<String, dynamic> json) {
     if (json == null) {
@@ -148,4 +187,15 @@ class PlayerDataItem implements PlayerListItem {
   Widget buildName(BuildContext buildContext) {
     return Text(this.name);
   }
+}
+
+class Stats {
+  final int ppg;
+  final int apg;
+  final int rpg;
+  final int bpg;
+  final int spg;
+  final int playerId;
+  final int year;
+  Stats(this.playerId, this.year, this.ppg, this.apg, this. rpg, this.bpg, this.spg);
 }
