@@ -454,3 +454,18 @@ def delete_player(player_id):
         abort(400)
     else:
         return jsonify({'success': True})
+
+@app.route('/League/<league_id>')
+def showLeagues(league_id):
+    league = League.query.filter_by(league_id=league_id)
+    playersDict[]
+    team_ids = league.teams_ids.split(",")
+    for team_id in teams_ids:
+        team = team.query.filter_by(id=team_id)
+        players = team.player_ids
+        playersDict = []
+        for p in players:
+            player = Player.query.filter_by(id=p).first()
+            playersDict.append(player.name)
+    return jsonify((league.league_name, playersDict))
+    
