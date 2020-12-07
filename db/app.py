@@ -256,7 +256,6 @@ def get_list_leagues():
 def get_list_teams(team_id):
 
     teams = Team.query.filter_by(id=team_id).order_by('team_id').all()
-
     return jsonify(teams)
 
 @app.route('/teamlists/create', methods=['POST'])
@@ -283,6 +282,58 @@ def create_team():
     else:
         return jsonify(body)
 
+# Need to test
+@app.route('Team/<team_id>/<player_id>', methods=['POST'])
+def add_player_to_team(player_id, team_id):
+    error = False
+    body = {}
+    try:
+        team = Team.query.filter_by(id=team_id).first()
+        if len(team.player_ids) < 100:
+            new_player_ids = team.player_ids.append(player_id + ',')
+            player = Player.query.filter_by(id=player_id).first().update
+            player.on_team = True
+            team.player_ids = new_player_ids
+            db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(400)
+    else:
+        return jsonify(body)
+ 
+# Need to test
+@app.route('Team/<team_id>/<player_id>', methods=['POST'])
+def remove_player_from_team(player_id, team_id):
+    error = False
+    body = {}
+    try:
+        team = Team.query.filter_by(id=team_id).first()
+        if len(team.player_ids) > 0:
+            player_ids = team.player_ids
+            if player_id in player_ids:
+                player = Player.query.filter_by(id=player_id).first().update
+                player.on_team = False
+                player_ids = player_ids.replace(str(player_id) + ',', '')
+                team.player_ids = player_ids
+                db.session.commit()
+    except: 
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(400)
+    else:
+        return jsonify(body)
+    
+# Need to add function that reroutes when trying to add move than team can hold. 
+# Possibly add a number of player variable to hold internally or make up to league comissioner. 
 
 @app.route('/Team/<team_id>/delete', methods=['DELETE'])
 def delete_team(team_id):
@@ -314,29 +365,31 @@ def get_list_players(list_id):
          players_as_dicts.append(p.as_dict())
     return (jsonify(players_as_dicts))
 
-@app.route('/playerlists/create', methods=['POST'])
-def create_player():
-    error = False
-    body = {}
-    try:
-        name = request.get_json()['name']
-        if not name:
-            name = 'Causal'
-        playerlist = PlayerList(name=name)
-        db.session.add(playerlist)
-        db.session.commit()
-        #body['player_id'] = playerlist.id
-        #body['name'] = playerlist.name
-    except:
-        error = True
-        db.session.rollback()
-        print(sys.exc_info())
-    finally:
-        db.session.close()
-    if error:
-        abort(400)
-    else:
-        return jsonify(body)
+# =============================================================================
+# @app.route('/playerlists/create', methods=['POST'])
+# def create_player():
+#     error = False
+#     body = {}
+#     try:
+#         name = request.get_json()['name']
+#         if not name:
+#             name = 'Causal'
+#         playerlist = PlayerList(name=name)
+#         db.session.add(playerlist)
+#         db.session.commit()
+#         #body['player_id'] = playerlist.id
+#         #body['name'] = playerlist.name
+#     except:
+#         error = True
+#         db.session.rollback()
+#         print(sys.exc_info())
+#     finally:
+#         db.session.close()
+#     if error:
+#         abort(400)
+#     else:
+#         return jsonify(body)
+# =============================================================================
 
 
 @app.route('/Player/<Player_id>/delete', methods=['DELETE'])
