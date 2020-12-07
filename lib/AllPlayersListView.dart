@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mlewis_fantasy_basketball/LoginView.dart';
 import 'package:mlewis_fantasy_basketball/MyTeamView.dart';
+import 'package:flutter_search_bar/flutter_search_bar.dart';
+
 import 'dart:convert' as convert;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -29,7 +31,31 @@ class ListViewState extends StatefulWidget {
 
 class _ListViewState extends State<ListViewState> {
   final TeamInfo info;
-  _ListViewState({@required this.info});
+  var searchBar;
+  _ListViewState({@required this.info}) {
+    searchBar = new SearchBar(
+        inBar: false,
+        setState: setState,
+        buildDefaultAppBar: buildAppBar,
+        clearOnSubmit: false,
+        closeOnSubmit: false,
+        onSubmitted: (String value) {
+          players = players.where((f) => f.name.toLowerCase().startsWith(value.toLowerCase())).toList();
+        },
+        // onChanged: (String value) {
+        //   players = players.where((f) => f.name.toLowerCase().startsWith(value.toLowerCase())).toList();
+        // },
+        onCleared: () {
+          print("cleared");
+          players = [];
+          getPlayers();
+        },
+        onClosed: () {
+          print("closed");
+          players = [];
+          getPlayers();
+        });
+  }
 
   List<PlayerDataItem> players = [];//List<PlayerListItem>.generate(100, (index) => PlayerDataItem('name', 'team', List.empty()));
 
@@ -72,7 +98,7 @@ class _ListViewState extends State<ListViewState> {
           getStats(p.id, 2020);
         }
       });
-      debugPrint("Number of players found : $_itemCount");
+      //debugPrint("Number of players found : $_itemCount");
     } else {
       debugPrint("Request failed with status: ${response.statusCode}.");
     }
@@ -94,10 +120,34 @@ class _ListViewState extends State<ListViewState> {
           player.stats.add(Stats.fromJson(player.id, statResponse));
         }
       });
-      debugPrint("Number of players found : $_itemCount");
+      //debugPrint("Number of players found : $_itemCount");
     } else {
       debugPrint("Request failed with status: ${response.statusCode}.");
     }
+  }
+
+  // void serachForPlayer(String player) async {
+  //   final http.Response response = await http.post(
+  //       'http://127.0.0.1:5000/Player/search/' + player,
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //       },
+  //       body: jsonEncode(<String, String>{
+  //         'player': player
+  //       }));
+  //   if (response.statusCode == 201 || response.statusCode == 200) {
+  //     print("Player successfully added to team");
+  //   } else {
+  //     throw Exception('Failed to add player to team');
+  //   }
+  // }
+
+  AppBar buildAppBar(BuildContext context) {
+    final String viewTitle = 'Free Agents';
+    return new AppBar(
+        title: new Text(viewTitle),
+        actions: [searchBar.getSearchAction(context)]
+    );
   }
 
 
@@ -107,11 +157,8 @@ class _ListViewState extends State<ListViewState> {
       getPlayers();
       _gotPlayers = true;
     }
-    final String viewTitle = 'Free Agents';
     return Scaffold(
-      appBar: AppBar(
-        title: Text(viewTitle),
-      ),
+      appBar: searchBar.build(context),
       body: ListView.builder(
           itemCount: players.length,
           itemBuilder: (context, index) {
