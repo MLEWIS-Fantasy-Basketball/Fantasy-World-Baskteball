@@ -128,7 +128,27 @@ class League(db.Model):
         attributes['cname'] = Owner.query.get(self.commissioner_id).username
         return attributes
 
+class Stats(db.Model):
+    __tablename__ = 'stats' # specify the table name if it is different from class name
+    __table_args__ = {'extend_existing': True}
+    id = db.Column('year_player_key', db.String(), primary_key=True) # define ID
+    year = db.Column(db.Integer, nullable=False)
+    player_id= db.Column(db.Integer, nullable=False) # define description
+    real_stats = db.Column(db.String())
+    fantasy_stats = db.Column(db.String())
 
+    # for debug print object information purpose
+    def __repr__(self):
+        return f'<Stats: ID {self.id}, year {self.year}>'
+
+    def as_dict(self):
+        attributes = dict()
+        attributes['year_player_key'] = self.id
+        attributes['year'] = self.year
+        attributes['player_id'] = self.player_id
+        attributes['real_stats'] = self.real_stats
+        attributes['fantasy_stats'] = self.fantasy_stats
+        return attributes
 #db.create_all() # create database based on class definition
 
 
@@ -406,7 +426,15 @@ def get_team_players(team_id):
 #         return jsonify(body)
 # =============================================================================
 
-
+@app.route('/Stats/<player_id>/<year>', methods=['POST'])
+def getStats(player_id, year):
+    stats = Stats.query.filter_by(year=year, player_id=player_id)
+    realstats = []
+    for stat in stats:
+        statlist = stat.real_stats.split(',')
+        for x in range(0,17):
+            realstats.append(int(statlist.get(x)))
+    return (jsonify(realstats))
 @app.route('/Player/<Player_id>/delete', methods=['DELETE'])
 def delete_player(player_id):
     error = False
