@@ -216,7 +216,7 @@ class _OwnerCreationState extends State<OwnerCreationForm> {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
                 createAccount(us, pw, tn, leagueId);
-                Navigator.push(
+                Navigator.pop(
                   context,
                   MaterialPageRoute(builder: (context) => LoginView()),
                 );

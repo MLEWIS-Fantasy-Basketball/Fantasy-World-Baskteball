@@ -136,12 +136,14 @@ class _ListViewState extends State<ListViewState> {
                             child: const Text('ADD PLAYER'),
                             onPressed: () {
                               addPlayerToTeam(info.teamId, player.id);
-                              Navigator.pop(
+                              Navigator.pop(context);
+                              Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>
                                         MyTeamView(info: info)),
                               );
+
                             },
                           ),
                           const SizedBox(width: 8),
@@ -209,12 +211,15 @@ class PlayerDataItem implements PlayerListItem {
   }
 
   Widget buildData(BuildContext buildContext) {
-    String ppg = "PPG: " + this.stats[0].ppg.toString().substring(0,this.stats[0].ppg.toString().indexOf(".")+2);
-    String apg = "APG: " + this.stats[0].apg.toString().substring(0,this.stats[0].apg.toString().indexOf(".")+2);
-    String rpg = "RPG: " + this.stats[0].rpg.toString().substring(0,this.stats[0].rpg.toString().indexOf(".")+2);
-    String bpg = "BPG: " + this.stats[0].bpg.toString().substring(0,this.stats[0].bpg.toString().indexOf(".")+2);
-    String spg = "SPG: " + this.stats[0].spg.toString().substring(0,this.stats[0].spg.toString().indexOf(".")+2);
-    return Text(this.realTeam + ", " + this.position + ", " + ppg + ", " + apg + ", " + rpg + ", " + bpg + ", " + spg);
+    if(stats.isNotEmpty) {
+      String ppg = "PPG: " + this.stats[0].ppg.toString().substring(0,this.stats[0].ppg.toString().indexOf(".")+2);
+      String apg = "APG: " + this.stats[0].apg.toString().substring(0,this.stats[0].apg.toString().indexOf(".")+2);
+      String rpg = "RPG: " + this.stats[0].rpg.toString().substring(0,this.stats[0].rpg.toString().indexOf(".")+2);
+      String bpg = "BPG: " + this.stats[0].bpg.toString().substring(0,this.stats[0].bpg.toString().indexOf(".")+2);
+      String spg = "SPG: " + this.stats[0].spg.toString().substring(0,this.stats[0].spg.toString().indexOf(".")+2);
+      return Text(this.realTeam + ", " + this.realLeague + ", " + this.position + ", " + ppg + ", " + apg + ", " + rpg + ", " + bpg + ", " + spg);
+    }
+    return Text(this.realTeam + ", " + this.realLeague + ", " + this.position);
   }
 
   Widget buildName(BuildContext buildContext) {

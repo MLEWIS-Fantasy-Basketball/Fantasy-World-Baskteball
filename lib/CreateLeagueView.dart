@@ -213,7 +213,7 @@ class _LeagueCreationState extends State<LeagueCreationForm> {
               if (_formKey.currentState.validate()) {
                 _formKey.currentState.save();
                 createLeague(us, pw, tn, ln, numTeams);
-                Navigator.push(
+                Navigator.pop(
                   context,
                   MaterialPageRoute(builder: (context) => LoginView()),
                 );
