@@ -303,7 +303,7 @@ def create_team():
         return jsonify(body)
 
 # Need to test
-@app.route('/Team/<team_id>/<player_id>', methods=['POST'])
+@app.route('/Team/add/<team_id>/<player_id>', methods=['POST'])
 def add_player_to_team(player_id, team_id):
     error = False
     body = {}
@@ -327,7 +327,7 @@ def add_player_to_team(player_id, team_id):
         return jsonify(body)
 
 # Need to test
-@app.route('/Team/<team_id>/<player_id>', methods=['POST'])
+@app.route('/Team/drop/<team_id>/<player_id>', methods=['POST'])
 def remove_player_from_team(player_id, team_id):
     error = False
     body = {}
@@ -336,7 +336,7 @@ def remove_player_from_team(player_id, team_id):
         if len(team.player_ids) > 0:
             player_ids = team.player_ids
             if player_id in player_ids:
-                player = Player.query.filter_by(id=player_id).first().update
+                player = Player.query.filter_by(id=player_id).first()
                 player.on_team = False
                 player_ids = player_ids.replace(str(player_id) + ',', '')
                 team.player_ids = player_ids
@@ -426,15 +426,19 @@ def get_team_players(team_id):
 #         return jsonify(body)
 # =============================================================================
 
-@app.route('/Stats/<player_id>/<year>', methods=['POST'])
+@app.route('/Stats/<player_id>/<year>', methods=['GET'])
 def getStats(player_id, year):
     stats = Stats.query.filter_by(year=year, player_id=player_id)
     realstats = []
     for stat in stats:
         statlist = stat.real_stats.split(',')
         for x in range(0,17):
-            realstats.append(int(statlist.get(x)))
+            if x == 1:
+                realstats.append(int(statlist[x].split(".")[0]))
+            else:
+                realstats.append(int(statlist[x]))
     return (jsonify(realstats))
+
 @app.route('/Player/<Player_id>/delete', methods=['DELETE'])
 def delete_player(player_id):
     error = False

@@ -55,7 +55,8 @@ class _MyTeamViewState extends State<MyTeamViewState> {
   List<PlayerDataItem> players = [];
   bool _gotPlayers = false;
 
-  var jsonResponse;
+  var playerResponse;
+  var statResponse;
   int _itemCount = 0;
 
   int wins = 0;
@@ -66,16 +67,57 @@ class _MyTeamViewState extends State<MyTeamViewState> {
     http.Response response = await http.get(url);
     if (response.statusCode == 200 || response.statusCode == 302) {
       setState(() {
-        jsonResponse = convert.jsonDecode(response.body);
-        //debugPrint(jsonResponse[1].toString());
-        _itemCount = jsonResponse.length;
-        for (var player in jsonResponse) {
-          players.add(PlayerDataItem.fromJson(player));
+        playerResponse = convert.jsonDecode(response.body);
+        _itemCount = playerResponse.length;
+        for (var player in playerResponse) {
+          var p = PlayerDataItem.fromJson(player);
+          players.add(p);
+        }
+        for (var p in players) {
+          getStats(p.id, 2020);
         }
       });
       debugPrint("Number of players found : $_itemCount");
     } else {
-      debugPrint("Request failed with status: ${response.statusCode}.");
+      debugPrint("Player Request failed with status: ${response.statusCode}.");
+    }
+  }
+  Future<void> getStats(int playerId, int year) async {
+    String url = "http://127.0.0.1:5000/Stats/" + playerId.toString() + "/" + year.toString();
+    http.Response response = await http.get(url);
+    if (response.statusCode == 200 || response.statusCode == 302) {
+      setState(() {
+        statResponse = convert.jsonDecode(response.body);
+        var player;
+        for (var p in players) {
+          if(p.id == playerId) {
+            player = p;
+          }
+        }
+        if(statResponse.length >= 17) {
+          player.stats.add(Stats.fromJson(player.id, statResponse));
+        }
+      });
+      debugPrint("Number of stats found : $_itemCount");
+    } else {
+      debugPrint("Stats Request failed with status: ${response.statusCode}.");
+    }
+  }
+
+  void dropPlayerFromTeam(int teamId, int playerId) async {
+    final http.Response response = await http.post(
+        'http://127.0.0.1:5000/Team/drop/' + teamId.toString() + '/' + playerId.toString(),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'player_id': playerId.toString(),
+          'team_id': teamId.toString(),
+        }));
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("Player successfully dropped from team");
+    } else {
+      throw Exception('Failed to drop player from team');
     }
   }
 
@@ -100,6 +142,31 @@ class _MyTeamViewState extends State<MyTeamViewState> {
                           leading: Icon(Icons.assignment_ind),
                           title: player.buildName(context),
                           subtitle: player.buildData(context),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            TextButton(
+                              child: const Text('DROP PLAYER'),
+                              onPressed: () {
+                                dropPlayerFromTeam(info.teamId, player.id);
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          MyTeamView(info: info)),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton(
+                              child: const Text('SEE MORE STATS'),
+                              onPressed: () {
+                                /* ... */
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                         ),
                       ]
                   )

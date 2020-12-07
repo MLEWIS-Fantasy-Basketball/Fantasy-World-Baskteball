@@ -170,13 +170,15 @@ class _LoginFormState extends State<LoginForm> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => MyTeamView(info: value)),
+                                  builder: (context) =>
+                                      MyTeamView(info: value)),
                             )
                           } else {
-                            Scaffold.of(context).showSnackBar(SnackBar(content: Text('Login failed!')))
-                          }
-                          }
-                        );
+                              Scaffold.of(context).showSnackBar(SnackBar(
+                                  content: Text('Login failed!')))
+                            }
+                        });
+                        _formKey.currentState.reset();
                       }
                     },
                     child: Text('Login'),
